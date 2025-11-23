@@ -5,19 +5,26 @@ const router = express.Router();
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
+// HELPER: Cookie Settings
+// 'sameSite: none' and 'secure: true' are MANDATORY for cross-domain cookies (Vercel -> Render)
+const getCookieOptions = () => {
+	return {
+		httpOnly: true,
+		maxAge: 24 * 60 * 60 * 1000, // 1 day
+		sameSite: "none",
+		secure: true,
+		path: "/",
+	};
+};
+
 // Login
 router.post("/login", (req, res) => {
 	const { email, password } = req.body;
 
 	if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-		// Set a simple HTTP-only cookie to mark the session as active
-		res.cookie("admin_session", "true", {
-			httpOnly: true,
-			maxAge: 24 * 60 * 60 * 1000, // 1 day
-			sameSite: "lax", // or 'strict'
-		});
+		// Set the session cookie
+		res.cookie("admin_session", "true", getCookieOptions());
 
-		// Return the admin user object
 		return res.json({
 			id: "admin-id",
 			name: "Admin",
@@ -31,7 +38,7 @@ router.post("/login", (req, res) => {
 
 // Logout
 router.post("/logout", (req, res) => {
-	res.clearCookie("admin_session");
+	res.clearCookie("admin_session", getCookieOptions());
 	res.json({ message: "Logged out" });
 });
 
@@ -48,11 +55,11 @@ router.get("/me", (req, res) => {
 		});
 	}
 
-	// If no session, return 401 or null (frontend handles null)
+	// If no session, return 401
 	res.status(401).json({ message: "Not authorized" });
 });
 
-// Remove Register route as requested
+// Disable Register
 router.post("/register", (req, res) => {
 	res.status(403).json({ message: "Registration is disabled." });
 });

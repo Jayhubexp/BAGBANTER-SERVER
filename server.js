@@ -9,13 +9,34 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+// CRITICAL: Trust the proxy (Render/Heroku)
+// This allows 'secure: true' cookies to work behind the load balancer.
+app.set("trust proxy", 1);
+
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
+
+// CORS Configuration
+const allowedOrigins = [
+	"https://www.bagbantergh.com", // Production
+	"https://bagbantergh.com", // Production (non-www)
+	"http://localhost:5173", // Local Testing
+];
+
 app.use(
 	cors({
-		origin: "https://www.bagbantergh.com", // Frontend URL
-		credentials: true, // Required for cookies
+		origin: (origin, callback) => {
+			if (!origin) return callback(null, true);
+
+			if (allowedOrigins.indexOf(origin) === -1) {
+				const msg =
+					"The CORS policy for this site does not allow access from the specified Origin.";
+				return callback(new Error(msg), false);
+			}
+			return callback(null, true);
+		},
+		credentials: true, // REQUIRED: Allows cookies to be sent/received
 	}),
 );
 
@@ -33,18 +54,15 @@ const productRoutes = require("./routes/products");
 const orderRoutes = require("./routes/orders");
 const statsRoutes = require("./routes/stats");
 
-// Mount Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes); // Handles GET(public), POST/PUT/DELETE(admin)
-app.use("/api/orders", orderRoutes); // Handles POST(public), GET/PUT(admin)
-app.use("/api/stats", statsRoutes); // Handles GET(admin)
+app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/stats", statsRoutes);
 
-// Base Route
 app.get("/", (req, res) => {
 	res.send("BagBanter Backend Running");
 });
 
-// Start Server
 app.listen(port, () => {
-	console.log(`Server is ready on http://localhost:${port}`);
+	console.log(`Server is ready on port ${port}`);
 });
