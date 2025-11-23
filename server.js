@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
 	cors({
-		origin: "https://bagbantergh.com/", // Frontend URL
+		origin: "https://www.bagbantergh.com/", // Frontend URL
 		credentials: true, // Required for cookies
 	}),
 );
