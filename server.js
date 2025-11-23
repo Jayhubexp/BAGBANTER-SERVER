@@ -19,7 +19,7 @@ app.use(
 	}),
 );
 
-// Database Connection (Kept for Products/Orders)
+// Database Connection
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose
@@ -31,12 +31,13 @@ mongoose
 const authRoutes = require("./routes/auth");
 const productRoutes = require("./routes/products");
 const orderRoutes = require("./routes/orders");
-const adminRoutes = require("./routes/admin");
+const statsRoutes = require("./routes/stats");
 
+// Mount Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/products", productRoutes); // Handles GET(public), POST/PUT/DELETE(admin)
+app.use("/api/orders", orderRoutes); // Handles POST(public), GET/PUT(admin)
+app.use("/api/stats", statsRoutes); // Handles GET(admin)
 
 // Base Route
 app.get("/", (req, res) => {

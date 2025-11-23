@@ -7,6 +7,7 @@ const productSchema = new mongoose.Schema({
 	originalPrice: { type: Number },
 	images: { type: [String], required: true },
 	category: { type: String, required: true },
+	color: { type: String }, // New Field
 	rating: { type: Number, default: 0 },
 	reviews: { type: Number, default: 0 },
 	sold: { type: String, default: "0" },
