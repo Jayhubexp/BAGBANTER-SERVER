@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router(); // This line was likely missing or malformed
-const express = require("express");
+
 const cookieParser = require("cookie-parser");
 
 const app = express();
