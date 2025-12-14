@@ -1,35 +1,20 @@
-// backend/middleware/authMiddleware.js
-const jwt = require("jsonwebtoken");
-
 const protect = (req, res, next) => {
-	let token;
+	// Safely get cookie
+	const session = req.cookies ? req.cookies.admin_session : null;
 
-	// Check for token in Authorization header (Bearer token)
-	if (
-		req.headers.authorization &&
-		req.headers.authorization.startsWith("Bearer")
-	) {
-		try {
-			// Get token from header
-			token = req.headers.authorization.split(" ")[1];
-
-			// Verify token
-			const decoded = jwt.verify(token, process.env.ADMIN_PASSWORD); // Using ADMIN_PASSWORD as secret for simplicity in this setup
-
-			// Attach user to request
-			req.user = {
-				id: decoded.id,
-				role: decoded.role,
-				email: decoded.email,
-			};
-
-			next();
-		} catch (error) {
-			console.error("Token Verification Error:", error.message);
-			res.status(401).json({ message: "Not authorized, invalid token" });
-		}
+	if (session === "true") {
+		req.user = {
+			id: "admin-id",
+			role: "admin",
+			email: process.env.ADMIN_EMAIL || "admin@bagbanter.com",
+		};
+		next();
 	} else {
-		res.status(401).json({ message: "Not authorized, no token provided" });
+		// Log the failure to terminal
+		console.log(`[AuthMiddleware] BLOCKED: ${req.method} ${req.originalUrl}`);
+		console.log(`   -> Incoming Cookie Header:`, req.headers.cookie || "NONE");
+
+		res.status(401).json({ message: "Not authorized, no session" });
 	}
 };
 

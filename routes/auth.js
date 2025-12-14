@@ -1,19 +1,26 @@
-// backend/routes/auth.js
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
 
-// Admin Credentials from Environment
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+// Admin Credentials
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@bagbanter.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 
-// Generate JWT
-const generateToken = (id) => {
-	return jwt.sign(
-		{ id, email: ADMIN_EMAIL, role: "admin" },
-		ADMIN_PASSWORD, // Secret
-		{ expiresIn: "30d" }
-	);
+// HELPER: Dynamic Cookie Settings
+const getCookieOptions = () => {
+	const isProduction = process.env.NODE_ENV === "production";
+
+	const options = {
+		httpOnly: true,
+		maxAge: 24 * 60 * 60 * 1000, // 1 day
+		path: "/",
+		// Development: 'lax' is safer for localhost than 'none'
+		// Production: 'none' is required for cross-site
+		sameSite: isProduction ? "none" : "lax",
+		secure: isProduction,
+	};
+
+	console.log(`[Auth] Cookie Settings:`, options);
+	return options;
 };
 
 // Login
@@ -21,35 +28,42 @@ router.post("/login", (req, res) => {
 	const { email, password } = req.body;
 
 	if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-		const token = generateToken("admin-id");
-		
+		console.log(`[Auth] Login success for: ${email}`);
+		res.cookie("admin_session", "true", getCookieOptions());
 		return res.json({
 			id: "admin-id",
-			name: "Shadrack",
+			name: "Admin",
 			email: ADMIN_EMAIL,
 			role: "admin",
-			token: token, // Send token to frontend
 		});
 	}
 
+	console.log(`[Auth] Login failed for: ${email}`);
 	return res.status(401).json({ message: "Invalid email or password" });
 });
 
-// Logout (Frontend handles token removal, this is just for API consistency)
+// Logout
 router.post("/logout", (req, res) => {
+	res.clearCookie("admin_session", getCookieOptions());
 	res.json({ message: "Logged out" });
 });
 
-// Get Current User (Validate Token)
-// We'll use the middleware here to verify the token sent from frontend
-const { protect } = require("../middleware/authMiddleware");
+// Get Current User
+router.get("/me", (req, res) => {
+	const session = req.cookies.admin_session;
 
-router.get("/me", protect, (req, res) => {
-    // If middleware passes, req.user is populated
-	res.json(req.user);
+	if (session === "true") {
+		return res.json({
+			id: "admin-id",
+			name: "Admin",
+			email: ADMIN_EMAIL,
+			role: "admin",
+		});
+	}
+
+	res.status(200).json(null);
 });
 
-// Disable Registration
 router.post("/register", (req, res) => {
 	res.status(403).json({ message: "Registration is disabled." });
 });
