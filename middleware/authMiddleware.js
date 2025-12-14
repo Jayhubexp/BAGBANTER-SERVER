@@ -1,61 +1,28 @@
-
 const protect = (req, res, next) => {
-  // Safely extract cookie (handle undefined req.cookies)
-  const session = (req.cookies && req.cookies.admin_session) ? req.cookies.admin_session : null;
+  const session = req.cookies?.admin_session;
 
-+  // Enhanced debug logging
-+  console.log(`[AuthMiddleware] Checking: ${req.method} ${req.originalUrl}`);
-+  console.log(`[AuthMiddleware] Session cookie:`, session);
-+  console.log(`[AuthMiddleware] All cookies:`, req.cookies);
-
-  if (session === 'true') {
-+    console.log(`[AuthMiddleware] ALLOWED: ${req.method} ${req.originalUrl}`);
+  if (session === "true") {
     req.user = {
-      id: 'admin-id',
-      role: 'admin',
-      email: process.env.ADMIN_EMAIL || "admin@bagbanter.com"
+      id: "admin-id",
+      role: "admin",
+      email: process.env.ADMIN_EMAIL || "admin@bagbanter.com",
     };
-    next();
-  } else {
-    // Debug logging to help trace issues
-    console.log(`[AuthMiddleware] BLOCKED: ${req.method} ${req.originalUrl}`);
-    console.log(`   -> Reason: Session cookie is invalid or missing.`);
--    // console.log(`   -> Incoming Cookies:`, req.cookies); 
-    
-    res.status(401).json({ message: "Not authorized, no session" });
+    return next();
   }
+
+  res.status(401).json({ message: "Not authorized" });
 };
 
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    return next();
+  }
 
-// const protect = (req, res, next) => {
-//   // Safely extract cookie (handle undefined req.cookies)
-//   const session = (req.cookies && req.cookies.admin_session) ? req.cookies.admin_session : null;
+  res.status(403).json({ message: "Admins only" });
+};
 
-//   if (session === 'true') {
-//     req.user = {
-//       id: 'admin-id',
-//       role: 'admin',
-//       email: process.env.ADMIN_EMAIL || "admin@bagbanter.com"
-//     };
-//     next();
-//   } else {
-//     // Debug logging to help trace issues
-//     console.log(`[AuthMiddleware] BLOCKED: ${req.method} ${req.originalUrl}`);
-//     console.log(`   -> Reason: Session cookie is invalid or missing.`);
-//     // console.log(`   -> Incoming Cookies:`, req.cookies); 
-    
-//     res.status(401).json({ message: "Not authorized, no session" });
-//   }
-// };
-
-// const adminOnly = (req, res, next) => {
-//   if (req.user && req.user.role === 'admin') {
-//     next();
-//   } else {
-//     res.status(403).json({ message: "Not authorized as admin" });
-//   }
-// };
-
-// module.exports = { protect, adminOnly };
-
-
+// ✅ IMPORTANT: named exports
+module.exports = {
+  protect,
+  adminOnly,
+};
