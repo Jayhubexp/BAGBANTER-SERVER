@@ -1,75 +1,65 @@
-const express = require('express');
-const router = express.Router(); // This line was likely missing or malformed
+const express = require("express");
+const router = express.Router();
 
-const cookieParser = require("cookie-parser");
-
-const app = express();
-
-app.use(express.json());
-app.use(cookieParser()); // ✅ MUST be before protect middleware
-
-
-// Admin Credentials
+// Admin credentials
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@bagbanter.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 
-// HELPER: Dynamic Cookie Settings
+// Helper: cookie options
 const getCookieOptions = () => {
   const isProduction = process.env.NODE_ENV === "production";
-
   return {
     httpOnly: true,
-    maxAge: 60 * 60 * 24, // ✅ seconds
+    secure: isProduction,               // must be true in prod
+    sameSite: isProduction ? "none" : "lax", // cross-domain in prod
+    maxAge: 24 * 60 * 60 * 1000,       // 1 day
     path: "/",
-    sameSite: isProduction ? "none" : "lax",
-    secure: isProduction
   };
 };
 
-
-// Login Route
-router.post('/login', (req, res) => {
+// LOGIN
+router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
   if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-    res.cookie('admin_session', 'true', getCookieOptions());
-    return res.json({ 
-      id: 'admin-id', 
-      name: 'Admin', 
-      email: ADMIN_EMAIL, 
-      role: 'admin' 
+    // Set cookie
+    res.cookie("admin_session", "true", getCookieOptions());
+    return res.json({
+      id: "admin-id",
+      name: "Admin",
+      email: ADMIN_EMAIL,
+      role: "admin"
     });
   }
 
-  return res.status(401).json({ message: 'Invalid email or password' });
+  return res.status(401).json({ message: "Invalid email or password" });
 });
 
-// Logout Route
-router.post('/logout', (req, res) => {
-  res.clearCookie('admin_session', getCookieOptions());
-  res.json({ message: 'Logged out' });
+// LOGOUT
+router.post("/logout", (req, res) => {
+  res.clearCookie("admin_session", getCookieOptions());
+  res.json({ message: "Logged out" });
 });
 
-// Get Current User (Session Check)
-router.get('/me', (req, res) => {
+// CHECK AUTH
+router.get("/me", (req, res) => {
   const session = req.cookies.admin_session;
 
-  if (session === 'true') {
-    return res.json({ 
-      id: 'admin-id', 
-      name: 'Admin', 
-      email: ADMIN_EMAIL, 
-      role: 'admin' 
+  if (session === "true") {
+    return res.json({
+      id: "admin-id",
+      name: "Admin",
+      email: ADMIN_EMAIL,
+      role: "admin"
     });
   }
 
-  // Return null (200 OK) so frontend knows we are just "not logged in" without throwing errors
-  res.status(200).json(null);
+  return res.status(401).json({ message: "Not authenticated" });
 });
 
-// Register Route (Disabled)
-router.post('/register', (req, res) => {
-    res.status(403).json({ message: "Registration is disabled." });
+// Registration disabled
+router.post("/register", (req, res) => {
+  res.status(403).json({ message: "Registration is disabled." });
 });
 
 module.exports = router;
