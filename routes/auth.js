@@ -1,5 +1,13 @@
 const express = require('express');
 const router = express.Router(); // This line was likely missing or malformed
+const express = require("express");
+const cookieParser = require("cookie-parser");
+
+const app = express();
+
+app.use(express.json());
+app.use(cookieParser()); // ✅ MUST be before protect middleware
+
 
 // Admin Credentials
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@bagbanter.com";
@@ -7,19 +15,17 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 
 // HELPER: Dynamic Cookie Settings
 const getCookieOptions = () => {
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === "production";
 
   return {
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    path: '/',
-    // Production needs 'none' for cross-site cookies between Render & Vercel
-    // Development needs 'lax' for stability on localhost
-    sameSite: isProduction ? 'none' : 'lax',
-    // Production needs true (HTTPS), Development needs false (HTTP)
+    maxAge: 60 * 60 * 24, // ✅ seconds
+    path: "/",
+    sameSite: isProduction ? "none" : "lax",
     secure: isProduction
   };
 };
+
 
 // Login Route
 router.post('/login', (req, res) => {
