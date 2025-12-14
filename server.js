@@ -9,7 +9,8 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Trust Proxy (Required for secure cookies on Render)
+// CRITICAL FOR RENDER: Trust the reverse proxy
+// This ensures cookies with 'secure: true' work correctly behind the load balancer.
 app.set("trust proxy", 1);
 
 // Middleware
@@ -17,44 +18,39 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS Configuration
+const allowedOrigins = [
+    "https://www.bagbantergh.com",
+    "https://bagbantergh.com",
+    "http://localhost:5173", // Keep for local testing
+    // Add Vercel preview URLs if needed, e.g., /\.vercel\.app$/
+];
+
 app.use(
-	cors({
-		origin: (origin, callback) => {
-			// Allow mobile apps/curl (no origin)
-			if (!origin) return callback(null, true);
-
-			// Define allowed origins
-			const allowedOrigins = [
-				"https://www.bagbantergh.com",
-				"https://bagbantergh.com",
-				"http://localhost:5173",
-				process.env.FRONTEND_URL // Allows you to add Vercel URL via Render Dashboard
-			].filter(Boolean); // Removes undefined values
-
-			// DEVELOPMENT: Allow ANY origin (localhost, IPs, etc.)
-			if (process.env.NODE_ENV !== "production") {
-				return callback(null, true);
-			}
-
-			// PRODUCTION: Strict Check
-			if (allowedOrigins.indexOf(origin) === -1) {
-				console.log("[CORS] Blocked Origin:", origin);
-				const msg = "The CORS policy for this site does not allow access from the specified Origin.";
-				return callback(new Error(msg), false);
-			}
-			return callback(null, true);
-		},
-		credentials: true, // REQUIRED: Allows cookies to be sent/received
-	}),
+    cors({
+        origin: (origin, callback) => {
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
+            
+            if (allowedOrigins.indexOf(origin) !== -1) {
+                return callback(null, true);
+            } else {
+                // Optional: Log blocked origins for debugging
+                // console.log("Blocked Origin:", origin);
+                const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+                return callback(new Error(msg), false);
+            }
+        },
+        credentials: true, // Required for cookies (session)
+    })
 );
 
 // Database Connection
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/bagbanter";
 
 mongoose
-	.connect(MONGO_URI)
-	.then(() => console.log("MongoDB Connected"))
-	.catch((err) => console.error("MongoDB connection error:", err));
+    .connect(MONGO_URI)
+    .then(() => console.log("MongoDB Connected"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 
 // Routes
 const authRoutes = require("./routes/auth");
@@ -63,19 +59,18 @@ const orderRoutes = require("./routes/orders");
 const statsRoutes = require("./routes/stats");
 
 app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/stats", statsRoutes);
+app.use("/api/products", productRoutes); 
+app.use("/api/orders", orderRoutes); 
+app.use("/api/stats", statsRoutes); 
 
 app.get("/", (req, res) => {
-	res.send("BagBanter Backend Running");
+    res.send("BagBanter Backend Running");
 });
 
 app.listen(port, () => {
-	console.log(`Server is ready on port ${port}`);
-	console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`Server is ready on port ${port}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
-
 // const express = require("express");
 // const mongoose = require("mongoose");
 // const dotenv = require("dotenv");
