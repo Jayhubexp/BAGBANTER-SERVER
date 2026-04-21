@@ -55,7 +55,9 @@ router.get("/stats", async (req, res) => {
 // --- ORDERS ---
 router.get("/orders", async (req,res)=>{
   try {
-    const orders = await Order.find({}).sort({ date:-1 });
+    const orders = await Order.find({})
+      .populate('user', 'name email phone')
+      .sort({ date:-1 });
     res.json(orders);
   } catch(e){ res.status(500).json({ message:e.message }); }
 });
