@@ -6,6 +6,15 @@ const cors = require("cors");
 // Load env
 dotenv.config();
 
+// ── Startup env validation ──────────────────────────────────────────────────
+const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET", "PAYSTACK_SECRET_KEY"];
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length > 0) {
+  console.error("❌ FATAL: Missing required environment variables:", missing.join(", "));
+  console.error("   Set these in your Render dashboard under Environment Variables.");
+  process.exit(1);
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
 

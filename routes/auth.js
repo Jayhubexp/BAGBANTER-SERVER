@@ -83,8 +83,8 @@ router.post("/register", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Register error:", error.message);
-    res.status(500).json({ message: "Registration failed. Please try again." });
+    console.error("Register error:", error);
+    res.status(500).json({ message: "Registration failed. Please try again.", detail: error.message });
   }
 });
 
@@ -190,8 +190,8 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error.message);
-    res.status(500).json({ message: "Login failed. Please try again." });
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Login failed. Please try again.", detail: error.message });
   }
 });
 
